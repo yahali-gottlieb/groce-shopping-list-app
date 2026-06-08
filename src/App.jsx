@@ -278,21 +278,21 @@ export default function App() {
            </button>
         </div>
 
-        {/* טופס הוספה */}
-        <form onSubmit={handleAdd} className="flex gap-2 mb-8 p-3 bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20">
+                {/* טופס הוספה מתוקן ומותאם לנייד */}
+        <form onSubmit={handleAdd} className="flex gap-2 mb-8 p-3 bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 items-center">
           <input
             type="text"
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
-            placeholder="הוסף פריט..."
-            className="flex-1 p-4 rounded-xl text-lg border-none bg-[#FAF5F0] focus:ring-4 focus:ring-[#ACD1AF]/10 outline-none transition-all"
+            placeholder="פריט..."
+            className="flex-[3] p-4 rounded-xl text-lg border-none bg-[#FAF5F0] focus:ring-4 focus:ring-[#ACD1AF]/10 outline-none transition-all min-w-0"
           />
           <input
             type="text"
             value={itemQuantity}
             onChange={(e) => setItemQuantity(e.target.value)}
             placeholder="כמות"
-            className="w-20 p-4 rounded-xl text-lg border-none bg-[#FAF5F0] text-center focus:ring-4 focus:ring-[#ACD1AF]/10 outline-none transition-all"
+            className="flex-1 p-4 rounded-xl text-lg border-none bg-[#FAF5F0] text-center focus:ring-4 focus:ring-[#ACD1AF]/10 outline-none transition-all min-w-[60px]"
           />
           <button 
             type="submit"
