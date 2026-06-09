@@ -78,6 +78,17 @@ export default function App() {
     } catch (error) { console.error(error); }
   };
 
+  const handleDeleteListFromMyLists = async (listId, e) => {
+    e.stopPropagation();
+    const proceed = window.confirm("האם ברצונך להסיר את הרשימה הזו מהתפריט שלך? (היא לא תימחק לשאר חברי הבית)");
+    if (!proceed) return;
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'myLists', listId));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const selectList = (id, name) => {
     setCurrentListId(id); setCurrentListName(name);
     localStorage.setItem('current_list_id', id); localStorage.setItem('current_list_name', name);
@@ -113,13 +124,12 @@ export default function App() {
   const sortedItems = [...items].sort((a, b) => a.completed === b.completed ? 0 : a.completed ? 1 : -1);
   const remainingCount = items.filter(item => !item.completed).length;
 
-  if (authLoading) return <div className="min-h-screen bg-[#F2F2F7] flex items-center justify-center"><div className="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin" /></div>;
+  if (authLoading) return <div className="min-h-screen bg-[#F2F2F7] flex items-center justify-center font-rubik"><div className="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin" /></div>;
 
   // מסך כניסה
   if (!user) return (
-    <div dir="rtl" className="min-h-screen bg-[#F2F2F7] flex items-center justify-center p-6" style={{ fontFamily: "'Rubik', sans-serif" }}>
+    <div dir="rtl" className="min-h-screen bg-[#F2F2F7] flex items-center justify-center p-6 font-rubik">
       <div className="bg-white p-8 rounded-[32px] shadow-sm w-full max-w-sm text-center">
-        {/* האייקון הראשי חזר ובגדול, בצבע חם */}
         <div className="w-20 h-20 bg-[#A67C52]/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 shadow-sm">
           <ShoppingBasket className="w-10 h-10 text-[#A67C52]" />
         </div>
@@ -132,9 +142,9 @@ export default function App() {
     </div>
   );
 
-  // מסך הלובי
+  // מסך הלובי (רשימת הרשימות)
   if (!currentListId) return (
-    <div dir="rtl" className="min-h-screen bg-[#F2F2F7] pb-20" style={{ fontFamily: "'Rubik', sans-serif" }}>
+    <div dir="rtl" className="min-h-screen bg-[#F2F2F7] pb-20 font-rubik">
       <div className="max-w-md mx-auto pt-10 px-4">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-black tracking-tight">הרשימות שלי</h1>
@@ -143,15 +153,36 @@ export default function App() {
           </button>
         </div>
 
-        <div className="bg-white rounded-[24px] overflow-hidden shadow-sm mb-8">
+        {/* רשימת כרטיסיות עם מנגנון החלקה למחיקה (Swipe to Delete) */}
+        <div className="space-y-3 mb-8">
           {myLists.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-sm">אין עדיין רשימות פעילות.</div>
+            <div className="p-8 text-center text-gray-400 text-sm bg-white rounded-[24px]">אין עדיין רשימות פעילות.</div>
           ) : (
-            myLists.map((list, idx) => (
-              <div key={list.id}>
-                <button onClick={() => selectList(list.id, list.name)} className="w-full p-4 flex justify-between items-center bg-white active:bg-gray-50 transition-colors">
+            myLists.map((list) => (
+              <div key={list.id} className="relative overflow-hidden rounded-[24px] shadow-sm bg-white">
+                
+                {/* כפתור המחיקה האדום שמסתתר מאחורי הכרטיסייה */}
+                <div className="absolute inset-0 bg-red-500 flex items-center justify-end rounded-[24px] z-0">
+                  <button 
+                    onClick={(e) => handleDeleteListFromMyLists(list.id, e)}
+                    className="h-full w-24 bg-red-500 text-white flex flex-col items-center justify-center gap-1 active:bg-red-600 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span className="text-[12px] font-bold">הסר</span>
+                  </button>
+                </div>
+
+                {/* הכרטיסייה הנגררת (Swipe) */}
+                <motion.div
+                  drag="x"
+                  dragDirectionLock
+                  dragConstraints={{ left: -96, right: 0 }}
+                  dragElastic={0.1}
+                  className="relative bg-white p-4 flex justify-between items-center cursor-pointer z-10 touch-pan-y"
+                  onClick={() => selectList(list.id, list.name)}
+                >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#A67C52]/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-[#A67C52]/10 flex items-center justify-center shrink-0">
                       <List className="w-5 h-5 text-[#A67C52]" />
                     </div>
                     <div className="text-right">
@@ -159,9 +190,9 @@ export default function App() {
                       <span className="text-[13px] text-gray-400">קוד: {list.id}</span>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-300" />
-                </button>
-                {idx !== myLists.length - 1 && <div className="h-[1px] bg-gray-100 ml-4" />}
+                  <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
+                </motion.div>
+
               </div>
             ))
           )}
@@ -171,7 +202,7 @@ export default function App() {
           <form onSubmit={handleCreateList} className="bg-white p-5 rounded-[24px] shadow-sm">
             <h3 className="font-semibold text-black text-[15px] mb-3 flex items-center gap-2"><FolderPlus className="w-4 h-4 text-[#A67C52]"/> יצירת רשימה</h3>
             <div className="flex gap-2 bg-[#767680]/[0.08] p-1.5 rounded-[18px]">
-              <input type="text" value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="שם הרשימה..." className="flex-1 px-3 bg-transparent text-[15px] outline-none" />
+              <input type="text" value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="שם הרשימה..." className="flex-1 px-3 bg-transparent text-[15px] outline-none font-rubik" />
               <button type="submit" disabled={isCreating} className="bg-[#A67C52] text-white px-5 py-2.5 rounded-[14px] text-sm font-semibold active:scale-95 transition-all">צור</button>
             </div>
           </form>
@@ -179,7 +210,7 @@ export default function App() {
           <form onSubmit={handleJoinList} className="bg-white p-5 rounded-[24px] shadow-sm">
             <h3 className="font-semibold text-black text-[15px] mb-3 flex items-center gap-2"><Users className="w-4 h-4 text-gray-500"/> הצטרפות לרשימה</h3>
             <div className="flex gap-2 bg-[#767680]/[0.08] p-1.5 rounded-[18px]">
-              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} placeholder="הזן קוד..." className="flex-1 px-3 bg-transparent text-[15px] outline-none uppercase" dir="ltr" />
+              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} placeholder="הזן קוד..." className="flex-1 px-3 bg-transparent text-[15px] outline-none uppercase font-rubik" dir="ltr" />
               <button type="submit" className="bg-gray-200 text-black px-5 py-2.5 rounded-[14px] text-sm font-semibold active:scale-95 transition-all">הצטרף</button>
             </div>
           </form>
@@ -188,10 +219,9 @@ export default function App() {
     </div>
   );
 
-  // מסך הרשימה עצמה
+  // מסך הרשימה הספציפית
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-24" dir="rtl" style={{ fontFamily: "'Rubik', sans-serif" }}>
-      {/* אזור עליון - תפריט דביק בסגנון אפל */}
+    <div className="min-h-screen bg-[#F2F2F7] pb-24 font-rubik" dir="rtl">
       <div className="sticky top-0 z-20 bg-[#F2F2F7]/80 backdrop-blur-xl border-b border-gray-200/50 px-4 pt-10 pb-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <button onClick={handleLeaveListView} className="flex items-center text-[#A67C52] text-[17px] active:opacity-50 transition-opacity">
@@ -206,9 +236,8 @@ export default function App() {
       <div className="px-4 pt-4 max-w-lg mx-auto">
         <h1 className="text-[34px] font-bold text-black tracking-tight leading-tight">{currentListName}</h1>
         
-        {/* קוד השיתוף במקום בולט בתוך הרשימה */}
         <div className="flex items-center gap-2 mt-2 mb-6">
-           <button onClick={copyJustCode} className="flex items-center gap-1.5 text-[13px] text-[#A67C52] font-mono bg-[#A67C52]/10 px-2.5 py-1 rounded-lg active:opacity-50 transition-all">
+           <button onClick={copyJustCode} className="flex items-center gap-1.5 text-[13px] text-[#A67C52] font-semibold bg-[#A67C52]/10 px-2.5 py-1 rounded-lg active:opacity-50 transition-all">
              <Copy className="w-3.5 h-3.5" />
              {currentListId}
            </button>
@@ -216,9 +245,9 @@ export default function App() {
         </div>
 
         <form onSubmit={handleAddItem} className="flex gap-2 mb-8 bg-white p-2 rounded-[24px] shadow-sm items-center border border-gray-100">
-          <input type="text" value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="מה חסר בבית?" className="flex-[3] py-3 px-4 text-[17px] bg-transparent outline-none min-w-0" />
+          <input type="text" value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="מה חסר בבית?" className="flex-[3] py-3 px-4 text-[17px] bg-transparent outline-none min-w-0 font-rubik" />
           <div className="w-[1px] h-8 bg-gray-100 mx-1"></div>
-          <input type="text" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} placeholder="כמות" className="flex-1 py-3 px-2 text-center text-[17px] bg-transparent outline-none min-w-[60px]" />
+          <input type="text" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} placeholder="כמות" className="flex-1 py-3 px-2 text-center text-[17px] bg-transparent outline-none min-w-[60px] font-rubik" />
           <button type="submit" className="w-11 h-11 bg-[#A67C52] text-white rounded-[18px] flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-sm"><Plus className="w-6 h-6"/></button>
         </form>
 
