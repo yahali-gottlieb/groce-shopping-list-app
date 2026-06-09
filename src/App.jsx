@@ -16,6 +16,7 @@ export default function App() {
   const [newListName, setNewListName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [openSwipeId, setOpenSwipeId] = useState(null); // משתנה לנעילת ההחלקה הפתוחה
 
   // ניהול פריטים
   const [items, setItems] = useState([]);
@@ -79,11 +80,15 @@ export default function App() {
   };
 
   const handleDeleteListFromMyLists = async (listId, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     const proceed = window.confirm("האם ברצונך להסיר את הרשימה הזו מהתפריט שלך? (היא לא תימחק לשאר חברי הבית)");
     if (!proceed) return;
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'myLists', listId));
+      if (currentListId === listId) {
+        handleLeaveListView();
+      }
+      setOpenSwipeId(null);
     } catch (error) {
       console.error(error);
     }
@@ -142,7 +147,7 @@ export default function App() {
     </div>
   );
 
-  // מסך הלובי (רשימת הרשימות)
+  // מסך הלובי (מרכז הרשימות של המשתמש)
   if (!currentListId) return (
     <div dir="rtl" className="min-h-screen bg-[#F2F2F7] pb-20 font-rubik">
       <div className="max-w-md mx-auto pt-10 px-4">
@@ -153,33 +158,48 @@ export default function App() {
           </button>
         </div>
 
-        {/* רשימת כרטיסיות עם מנגנון החלקה למחיקה (Swipe to Delete) */}
+        {/* רשימת כרטיסיות עם מנגנון החלקה ומחיקה משופר ואחיד */}
         <div className="space-y-3 mb-8">
           {myLists.length === 0 ? (
             <div className="p-8 text-center text-gray-400 text-sm bg-white rounded-[24px]">אין עדיין רשימות פעילות.</div>
           ) : (
             myLists.map((list) => (
-              <div key={list.id} className="relative overflow-hidden rounded-[24px] shadow-sm bg-white">
+              <div key={list.id} className="relative overflow-hidden rounded-[24px] shadow-sm bg-white h-[74px]">
                 
-                {/* כפתור המחיקה האדום שמסתתר מאחורי הכרטיסייה */}
-                <div className="absolute inset-0 bg-red-500 flex items-center justify-end rounded-[24px] z-0">
-                  <button 
-                    onClick={(e) => handleDeleteListFromMyLists(list.id, e)}
-                    className="h-full w-24 bg-red-500 text-white flex flex-col items-center justify-center gap-1 active:bg-red-600 transition-colors"
-                  >
+                {/* כפתור מחיקה מקובע ואקטיבי לחלוטין שמחכה מאחור בהצמדה ימינה */}
+                <div 
+                  onClick={(e) => handleDeleteListFromMyLists(list.id, e)}
+                  className="absolute inset-0 bg-red-500 rounded-[24px] z-0 cursor-pointer"
+                >
+                  <div className="absolute right-6 top-0 bottom-0 flex items-center gap-2 text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                    <span className="text-sm font-bold tracking-tight">Delete</span>
                     <Trash2 className="w-5 h-5" />
-                    <span className="text-[12px] font-bold">הסר</span>
-                  </button>
+                  </div>
                 </div>
 
-                {/* הכרטיסייה הנגררת (Swipe) */}
+                {/* הכרטיסייה הנגררת עם מנגנון נעילה מובנה */}
                 <motion.div
                   drag="x"
                   dragDirectionLock
-                  dragConstraints={{ left: -96, right: 0 }}
+                  dragConstraints={{ left: -100, right: 0 }}
                   dragElastic={0.1}
-                  className="relative bg-white p-4 flex justify-between items-center cursor-pointer z-10 touch-pan-y"
-                  onClick={() => selectList(list.id, list.name)}
+                  animate={{ x: openSwipeId === list.id ? -100 : 0 }}
+                  onDragEnd={(event, info) => {
+                    // אם המשתמש גרר מספיק שמאלה, ננעל את הלשונית פתוחה
+                    if (info.offset.x < -35) {
+                      setOpenSwipeId(list.id);
+                    } else {
+                      setOpenSwipeId(null);
+                    }
+                  }}
+                  className="absolute inset-0 bg-white p-4 flex justify-between items-center cursor-pointer z-10 touch-pan-y"
+                  onClick={() => {
+                    if (openSwipeId === list.id) {
+                      setOpenSwipeId(null);
+                    } else {
+                      selectList(list.id, list.name);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-[#A67C52]/10 flex items-center justify-center shrink-0">
