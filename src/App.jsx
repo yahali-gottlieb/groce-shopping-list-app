@@ -179,7 +179,7 @@ export default function App() {
           <form onSubmit={handleJoinList} className="bg-white p-5 rounded-[24px] shadow-sm">
             <h3 className="font-semibold text-black text-[15px] mb-3 flex items-center gap-2"><Users className="w-4 h-4 text-gray-500"/> הצטרפות לרשימה</h3>
             <div className="flex gap-2 bg-[#767680]/[0.08] p-1.5 rounded-[18px]">
-              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} placeholder="הזן קוד..." className="flex-1 px-3 bg-transparent text-[15px] outline-none uppercase font-mono" dir="ltr" />
+              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} placeholder="הזן קוד..." className="flex-1 px-3 bg-transparent text-[15px] outline-none uppercase" dir="ltr" />
               <button type="submit" className="bg-gray-200 text-black px-5 py-2.5 rounded-[14px] text-sm font-semibold active:scale-95 transition-all">הצטרף</button>
             </div>
           </form>
